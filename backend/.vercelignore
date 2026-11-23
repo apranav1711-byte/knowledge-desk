@@ -7,3 +7,4 @@ sample_uploads
 __pycache__
 .pytest_cache
 Dockerfile
+.env.local
