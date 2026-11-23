@@ -1,0 +1,10 @@
+NEW STARTER EQUIPMENT CHECKLIST
+Classification: General Internal
+Owner: Workplace Technology
+Effective: 1 October 2026
+
+Every permanent employee receives a managed laptop, power adapter, protective sleeve, and standard headset on their start date. A keyboard and mouse are provided when the employee's work location requires them.
+
+The employee must complete device setup and multi-factor authentication during their first working day. The assigned laptop remains company property and must not be shared with family members or used by anyone else.
+
+For a replacement accessory, submit a request through the Service Desk and include the asset tag of the laptop. A lost or stolen laptop must be reported to the Service Desk and the line manager within one hour of discovery.
