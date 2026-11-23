@@ -93,3 +93,4 @@ backend/data/
 .vercel
 .env*
 .admin-initial-password.txt
+test-files/

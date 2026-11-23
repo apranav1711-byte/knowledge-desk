@@ -91,7 +91,7 @@ async def process_document(doc_id: str, data: bytes, user: Identity) -> None:
         await _fail(doc_id, str(exc), user)
     except Exception as exc:  # noqa: BLE001 - surfaced to admins as a bounded message, details in logs
         log.exception("ingestion failed for %s", doc_id)
-        await _fail(doc_id, "Indexing failed. Retry the upload; incomplete content is not searchable.", user)
+        await _fail(doc_id, f"Indexing failed ({type(exc).__name__}). Retry the upload; incomplete content is not searchable.", user)
 
 
 async def _fail(doc_id: str, message: str, user: Identity) -> None:
