@@ -89,3 +89,7 @@ output/pdf/Knowledge_Desk_Project_Handbook.pdf
 # Rebuild additions
 frontend/node_modules/
 backend/data/
+
+.vercel
+.env*
+.admin-initial-password.txt

@@ -36,7 +36,7 @@ function UploadModal({ me, onClose, onDone, notify }) {
       </div>
       <label className="field"><span>Who may access this document?</span>
         <select value={classification} onChange={(e) => setClassification(e.target.value)}>{options.map((c) => <option key={c} value={c}>{labelClass(c)}</option>)}</select>
-        <p className="hint">You can only classify documents at levels your own role can read. Access is applied before every search.</p></label>
+        </label>
       <label className="field"><span>Department (optional)</span><input type="text" value={department} maxLength={80} onChange={(e) => setDepartment(e.target.value)} /></label>
     </Modal>
   );
@@ -56,7 +56,7 @@ function EditModal({ doc, me, onClose, onDone, notify }) {
     <Modal title="Edit document" onClose={onClose} footer={<><button className="btn" onClick={onClose}>Cancel</button><button className="btn btn-primary" disabled={busy || !title.trim()} onClick={save}>{busy && <Spinner />} Save changes</button></>}>
       <label className="field"><span>Title</span><input type="text" value={title} maxLength={200} onChange={(e) => setTitle(e.target.value)} /></label>
       <label className="field"><span>Access classification</span><select value={classification} onChange={(e) => setClassification(e.target.value)}>{options.map((c) => <option key={c} value={c}>{labelClass(c)}</option>)}</select>
-        <p className="hint">Changing this immediately changes who can retrieve the document’s content.</p></label>
+        </label>
     </Modal>
   );
 }
@@ -86,7 +86,7 @@ export default function Documents({ me, notify }) {
   return (
     <>
       <div className="page-head">
-        <div><h1>Documents</h1><p>Every document available to your role. Files are parsed, split into passages and indexed with their access level.</p></div>
+        <div><h1>Documents</h1></div>
         {uploadable(me).length > 0 && <button className="btn btn-teal" onClick={() => setUpload(true)}><Upload size={16} /> Add document</button>}
       </div>
       <Card>
@@ -97,7 +97,7 @@ export default function Documents({ me, notify }) {
           </select>
           <span className="muted" style={{ marginLeft: 'auto' }}>{shown.length} document{shown.length === 1 ? '' : 's'}</span>
         </div>
-        {!docs ? <Spinner /> : shown.length === 0 ? <Empty icon={FileText} title="No documents found">{docs.length ? 'Try a different search or filter.' : 'Add a document to get started.'}</Empty> : (
+        {!docs ? <Spinner /> : shown.length === 0 ? <Empty icon={FileText} title="No documents found"></Empty> : (
           <div className="table-wrap"><table className="data">
             <thead><tr><th>Document</th><th>Classification</th><th>Status</th><th>Passages</th><th>Added</th><th></th></tr></thead>
             <tbody>{shown.map((d) => (

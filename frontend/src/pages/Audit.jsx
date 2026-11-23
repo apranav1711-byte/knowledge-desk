@@ -32,15 +32,15 @@ export default function Audit({ notify }) {
 
   return (
     <>
-      <div className="page-head"><div><h1>Audit & security</h1><p>A tamper-evident record of every question and administrative change, plus on-demand checks that access control holds.</p></div></div>
+      <div className="page-head"><div><h1>Audit</h1></div></div>
       <div className="grid g2" style={{ marginBottom: 16 }}>
-        <Card title="Audit chain integrity" subtitle="Each record is hashed together with the previous one (SHA-256).">
+        <Card title="Audit chain integrity">
           {verify && <div className={`status-banner ${verify.tamper_free ? 'status-ok' : 'status-bad'}`} style={{ marginBottom: 12 }}><Fingerprint size={20} />
             <div><b>{verify.tamper_free ? 'No tampering detected' : `Chain broken at record #${verify.broken_seq}`}</b><div style={{ fontSize: 12.5 }}>{verify.records_checked} records checked{verify.reason ? ` · ${verify.reason}` : ''}</div></div></div>}
           <button className="btn btn-primary" onClick={() => run('verify')} disabled={busy === 'verify'}>{busy === 'verify' ? <Spinner /> : <ShieldCheck size={16} />} Verify audit chain</button>
           <p className="hint">Detects edited, reordered or missing records. It cannot detect deletion of the newest records without an external checkpoint.</p>
         </Card>
-        <Card title="Access-control self-test" subtitle="Probes retrieval as every role using each document’s own text and checks nothing outside clearance is returned.">
+        <Card title="Access-control self-test">
           {check && <div className={`status-banner ${check.leaks === 0 ? 'status-ok' : 'status-bad'}`} style={{ marginBottom: 12 }}><ShieldCheck size={20} />
             <div><b>{check.leaks === 0 ? `0 leaks in ${check.trials} trials` : `${check.leaks} leak(s) in ${check.trials} trials`}</b><div style={{ fontSize: 12.5 }}>{check.documents_probed} documents × 4 roles</div></div></div>}
           {check?.failures?.map((f, i) => <p key={i} className="error-text">{ROLE_LABEL[f.role]} received {f.leaked_classifications.join(', ')} while probing “{f.document}”.</p>)}

@@ -44,7 +44,7 @@ export default function Users({ me, notify }) {
   };
   return (
     <>
-      <div className="page-head"><div><h1>Users & roles</h1><p>Create accounts and control what each person can search. Changes apply on their very next request.</p></div>
+      <div className="page-head"><div><h1>Users</h1></div>
         <button className="btn btn-teal" onClick={() => setAdding(true)}><Plus size={16} /> Add user</button></div>
       <Card>
         {!users ? <Spinner /> : users.length === 0 ? <Empty title="No users yet" /> : (
@@ -61,9 +61,6 @@ export default function Users({ me, notify }) {
               </tr>))}</tbody>
           </table></div>
         )}
-      </Card>
-      <Card title="Role reference" className="" >
-        <div className="grid g4">{ROLES.map((r) => <div key={r}><RoleBadge value={r} /><p className="hint" style={{ marginTop: 8 }}>{ROLE_HELP[r]}</p></div>)}</div>
       </Card>
       {adding && <AddUser onClose={() => setAdding(false)} onDone={load} notify={notify} />}
     </>

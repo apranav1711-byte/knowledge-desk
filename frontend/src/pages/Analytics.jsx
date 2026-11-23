@@ -23,7 +23,7 @@ export default function Analytics({ notify }) {
 
   return (
     <>
-      <div className="page-head"><div><h1>Analytics</h1><p>Live usage, answer quality and corpus health for your organization. Every figure comes from the audit trail and document store.</p></div></div>
+      <div className="page-head"><div><h1>Analytics</h1></div></div>
       <div className="grid g4" style={{ marginBottom: 16 }}>
         <Stat icon={MessageSquareText} label="Questions (30 days)" value={k.queries_30d} hint={`${k.queries_24h} in the last 24 h`} tone="blue" />
         <Stat icon={CheckCircle2} label="Answer rate" value={k.answer_rate == null ? '—' : `${Math.round(k.answer_rate * 100)}%`} hint={`${k.fallback_30d} insufficient-evidence`} tone="green" />
@@ -37,7 +37,7 @@ export default function Analytics({ notify }) {
         <Stat icon={ThumbsUp} label="Feedback" value={`${k.feedback_up} 👍 / ${k.feedback_down} 👎`} tone="green" />
       </div>
       <div className="grid g-2-1" style={{ marginBottom: 16 }}>
-        <Card title="Questions per day" subtitle="Last 14 days" action={<div className="legend"><span><i style={{ background: '#14b8a6' }} />Answered</span><span><i style={{ background: '#f4b740' }} />Insufficient evidence</span></div>}>
+        <Card title="Questions per day" action={<div className="legend"><span><i style={{ background: '#14b8a6' }} />Answered</span><span><i style={{ background: '#f4b740' }} />Insufficient evidence</span></div>}>
           <div className="bars" role="img" aria-label="Questions per day">
             {d.timeseries.map((x) => (
               <div className="bar-col" key={x.day} title={`${x.day}: ${x.answered} answered, ${x.fallback} insufficient`}>

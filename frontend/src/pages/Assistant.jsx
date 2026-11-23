@@ -13,7 +13,7 @@ export function DocViewer({ source, onClose }) {
     <Modal wide title={doc?.title || source.title} onClose={onClose}>
       {err ? <p className="error-text">{err}</p> : !doc ? <Spinner /> : (
         <>
-          <p className="muted" style={{ marginBottom: 14 }}>{doc.total_pages} page(s) · {doc.total_chunks} passages · the passage used for the answer is highlighted</p>
+          <p className="muted" style={{ marginBottom: 14 }}>{doc.total_pages} page(s)</p>
           {doc.excerpts.map((x) => (
             <div key={x.chunk_index} className={`excerpt-block ${x.content === source.excerpt ? 'active' : ''}`}>
               <div className="muted" style={{ fontSize: 12, marginBottom: 6 }}>Page {x.page}{x.section ? ` · ${x.section}` : ''}</div>
@@ -60,14 +60,13 @@ export default function Assistant({ arg, notify }) {
 
   return (
     <>
-      <div className="page-head"><div><h1>Ask the assistant</h1><p>Answers are assembled only from passages your role may read, and each one cites its source.</p></div></div>
+      <div className="page-head"><div><h1>Assistant</h1></div></div>
       <div className="assistant">
         <Card className="chat">
           <div className="messages" aria-live="polite">
             {messages.length === 0 && (
-              <Empty icon={FileSearch} title="Start with a policy question">
-                Ask about a policy, allowance, limit, or procedure.
-                <span className="chips" style={{ justifyContent: 'center', marginTop: 12 }}>{STARTERS.map((s) => <button key={s} className="chip" onClick={() => ask(s)}>{s}</button>)}</span>
+              <Empty icon={FileSearch} title="Ask a question">
+                                <span className="chips" style={{ justifyContent: 'center', marginTop: 12 }}>{STARTERS.map((s) => <button key={s} className="chip" onClick={() => ask(s)}>{s}</button>)}</span>
               </Empty>
             )}
             {messages.map((m) => m.role === 'user' ? <div key={m.id} className="msg-user">{m.text}</div> : (
@@ -85,19 +84,19 @@ export default function Assistant({ arg, notify }) {
                 )}
               </div>
             ))}
-            {busy && <div className="msg-bot"><Spinner /> Searching documents available to your role…</div>}
+            {busy && <div className="msg-bot"><Spinner /> Searching…</div>}
             <div ref={bottom} />
           </div>
           <form className="composer" onSubmit={(e) => { e.preventDefault(); ask(); }}>
-            <textarea rows={2} maxLength={500} placeholder="Ask about a company policy…" value={input} onChange={(e) => setInput(e.target.value)}
+            <textarea rows={2} maxLength={500} placeholder="Ask a question" value={input} onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); ask(); } }} />
             <button className="btn btn-teal" disabled={busy || input.trim().length < 3}><Send size={16} /> Ask</button>
           </form>
         </Card>
 
-        <Card title="Evidence" subtitle={active ? 'Source passages behind the selected answer' : 'Select an answer to see its sources'}>
-          {!active || active.error ? <Empty icon={FileSearch} title="No evidence selected">Sources appear here after you ask a question.</Empty>
-            : active.sources.length === 0 ? <Empty title="No supporting passage">Nothing in the documents available to your role supports this question.</Empty>
+        <Card title="Evidence">
+          {!active || active.error ? <Empty icon={FileSearch} title="No sources yet" />
+            : active.sources.length === 0 ? <Empty title="No supporting passage" />
             : active.sources.map((s) => (
               <div className="source" id={`src-${s.id}`} key={s.id}>
                 <header><div><strong>[{s.id}] {s.title}</strong><div className="muted" style={{ fontSize: 12 }}>Page {s.page}{s.section ? ` · ${s.section}` : ''}</div></div><ClassBadge value={s.classification} /></header>

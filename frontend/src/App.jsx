@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { BarChart3, FileText, LayoutDashboard, LogOut, MessageSquareText, ShieldCheck, Users as UsersIcon, Lock } from 'lucide-react';
-import { api, ROLE_LABEL } from './api';
+import { BarChart3, FileText, LayoutDashboard, LogOut, MessageSquareText, ShieldCheck, Users as UsersIcon } from 'lucide-react';
+import { api } from './api';
 import { supabase, configured } from './supabase';
 import { Spinner, Toast, RoleBadge } from './components/ui';
 import { AccessProblem, ConfigMissing, Login, SetPassword } from './pages/Auth';
@@ -55,36 +55,28 @@ function Authenticated() {
   if (!me) return <div className="login-form-wrap" style={{ minHeight: '100vh' }}><Spinner size={24} /></div>;
 
   const nav = [
-    ['overview', 'Overview', LayoutDashboard], ['assistant', 'Ask the assistant', MessageSquareText], ['documents', 'Documents', FileText],
-    ...(me.permissions.manage_users ? [['users', 'Users & roles', UsersIcon]] : []),
+    ['overview', 'Overview', LayoutDashboard], ['assistant', 'Assistant', MessageSquareText], ['documents', 'Documents', FileText],
+    ...(me.permissions.manage_users ? [['users', 'Users', UsersIcon]] : []),
     ...(me.permissions.view_analytics ? [['analytics', 'Analytics', BarChart3]] : []),
-    ...(me.permissions.view_audit ? [['audit', 'Audit & security', ShieldCheck]] : []),
+    ...(me.permissions.view_audit ? [['audit', 'Audit', ShieldCheck]] : []),
   ];
-  const title = nav.find((n) => n[0] === page)?.[1];
   const props = { me, go, notify, arg: pageArg };
 
   return (
     <div className="shell">
-      <aside className="sidebar">
-        <div className="brand"><span className="brand-mark">KD</span><span><strong>Knowledge Desk</strong><small>Policy intelligence</small></span></div>
+      <header className="topnav">
+        <div className="brand"><strong>Knowledge Desk</strong></div>
         <nav className="nav" aria-label="Main">
-          <span className="nav-label">Workspace</span>
-          {nav.map(([id, label, Icon]) => (
-            <button key={id} className={page === id ? 'active' : ''} onClick={() => go(id)}><Icon size={17} />{label}</button>
-          ))}
+          {nav.map(([id, label]) => <button key={id} className={page === id ? 'active' : ''} onClick={() => go(id)}>{label}</button>)}
         </nav>
-        <div className="sidebar-foot"><b><Lock size={14} /> Access is enforced first</b>You only see and search documents cleared for the <b style={{ display: 'inline' }}>{ROLE_LABEL[me.role]}</b> role.</div>
-      </aside>
+        <div className="user-chip">
+          <div className="who"><div>{me.full_name || me.email}</div></div>
+          <RoleBadge value={me.role} />
+          <span className="avatar" aria-hidden>{initials(me.full_name || me.email)}</span>
+          <button className="icon-btn" onClick={signOut} title="Sign out" aria-label="Sign out"><LogOut size={18} /></button>
+        </div>
+      </header>
       <div className="main">
-        <header className="topbar">
-          <div className="crumbs">Knowledge Desk / <strong>{title}</strong></div>
-          <div className="user-chip">
-            <div className="who"><div>{me.full_name || me.email}</div><small>{me.department || me.email}</small></div>
-            <RoleBadge value={me.role} />
-            <span className="avatar" aria-hidden>{initials(me.full_name || me.email)}</span>
-            <button className="icon-btn" onClick={signOut} title="Sign out" aria-label="Sign out"><LogOut size={18} /></button>
-          </div>
-        </header>
         <main className="content">
           {page === 'overview' && <Overview {...props} />}
           {page === 'assistant' && <Assistant {...props} />}
