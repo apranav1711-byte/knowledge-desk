@@ -18,9 +18,12 @@ function UploadModal({ me, onClose, onDone, notify }) {
   const input = useRef(null);
   const submit = async () => {
     setBusy(true);
-    const form = new FormData(); form.append('file', file); form.append('classification', classification); form.append('department', department);
     try {
-      const r = await api('/documents', { method: 'POST', form });
+      // Direct-to-storage upload: large files never pass through the API's request-size limit.
+      const { upload_url, staging_path } = await api('/documents/upload-url', { method: 'POST', body: { filename: file.name, size: file.size } });
+      const put = await fetch(upload_url, { method: 'PUT', headers: { 'Content-Type': file.type || 'application/octet-stream' }, body: file }).catch(() => null);
+      if (!put?.ok) throw new Error('The file could not be uploaded. Check your connection and try again.');
+      const r = await api('/documents/finalize', { method: 'POST', body: { staging_path, classification, department } });
       notify(r.duplicate ? 'This file is already in the library.' : `${file.name} uploaded. Indexing…`);
       onDone(); onClose();
     } catch (e) { notify(e.message, 'err'); setBusy(false); }

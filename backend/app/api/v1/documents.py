@@ -1,8 +1,9 @@
+import uuid
 from pathlib import Path
 
 from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, UploadFile
 
-from app.api.v1.schemas import DocumentPatch
+from app.api.v1.schemas import DocumentPatch, UploadFinalize, UploadRequest
 from app.core.acl import CLASSIFICATIONS, can_read, can_upload
 from app.core.auth import Identity, current_identity
 from app.core.config import settings
@@ -63,15 +64,28 @@ async def upload(
     file: UploadFile = File(...),
     user: Identity = Depends(current_identity),
 ):
-    if classification not in CLASSIFICATIONS:
-        raise HTTPException(422, f"Classification must be one of {CLASSIFICATIONS}")
-    if not can_upload(user.role, classification):
-        raise HTTPException(403, "Your role cannot add documents at this classification level")
-    name = ingestion.safe_name(file.filename or "document")
-    if Path(name).suffix.lower() not in SUPPORTED:
-        raise HTTPException(422, "Unsupported file type. Supported: PDF, DOCX, XLSX, CSV, PPTX, HTML, Markdown, TXT.")
     data = await file.read(settings.MAX_UPLOAD_BYTES + 1)
     await file.close()
+    return await _accept(user, file.filename or "document", data, classification, department, background)
+
+
+def _check_upload(user: Identity, filename: str, classification: str | None = None) -> str:
+    if classification is not None:
+        if classification not in CLASSIFICATIONS:
+            raise HTTPException(422, f"Classification must be one of {CLASSIFICATIONS}")
+        if not can_upload(user.role, classification):
+            raise HTTPException(403, "Your role cannot add documents at this classification level")
+    elif user.role == "employee":
+        raise HTTPException(403, "Your role cannot add documents")
+    name = ingestion.safe_name(filename)
+    if Path(name).suffix.lower() not in SUPPORTED:
+        raise HTTPException(422, "Unsupported file type. Supported: PDF, DOCX, XLSX, CSV, PPTX, HTML, Markdown, TXT.")
+    return name
+
+
+async def _accept(user: Identity, filename: str, data: bytes, classification: str, department: str,
+                  background: BackgroundTasks):
+    name = _check_upload(user, filename, classification)
     if not data:
         raise HTTPException(422, "The file is empty.")
     if len(data) > settings.MAX_UPLOAD_BYTES:
@@ -85,6 +99,36 @@ async def upload(
     p = await pool()
     row = await p.fetchrow(f"select {_COLS} from public.documents where id=$1::uuid", doc_id)
     return {**_json(row), "duplicate": duplicate}
+
+
+def _staging_prefix(user: Identity) -> str:
+    return f"{user.tenant_id}/staging/{user.id}/"
+
+
+@router.post("/upload-url")
+async def upload_url(body: UploadRequest, user: Identity = Depends(current_identity)):
+    """Step 1 of a direct upload: the browser PUTs the file to Supabase Storage, so large files skip the API limit."""
+    name = _check_upload(user, body.filename)
+    if body.size > settings.MAX_UPLOAD_BYTES:
+        raise HTTPException(413, f"The file exceeds the {settings.MAX_UPLOAD_BYTES // (1024 * 1024)} MB limit.")
+    path = f"{_staging_prefix(user)}{uuid.uuid4()}/{name}"
+    return {"upload_url": await supabase_admin.storage_upload_url(path), "staging_path": path}
+
+
+@router.post("/finalize", status_code=202)
+async def finalize_upload(body: UploadFinalize, background: BackgroundTasks, user: Identity = Depends(current_identity)):
+    """Step 2: index the file the browser uploaded. Only the caller's own staging area is accepted."""
+    path = body.staging_path
+    if not path.startswith(_staging_prefix(user)) or ".." in path or path.count("/") != 4:
+        raise HTTPException(403, "Invalid upload reference")
+    try:
+        data = await supabase_admin.storage_get(path)
+    except RuntimeError:
+        raise HTTPException(404, "The uploaded file was not found. Upload it again.")
+    try:
+        return await _accept(user, path.rsplit("/", 1)[-1], data, body.classification, body.department, background)
+    finally:
+        await supabase_admin.storage_delete(path)
 
 
 @router.get("/{doc_id}")

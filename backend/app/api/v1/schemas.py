@@ -40,3 +40,16 @@ class UserPatch(BaseModel):
     department: str | None = Field(default=None, max_length=80)
     role: Role | None = None
     is_active: bool | None = None
+
+
+class UploadRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+    filename: str = Field(min_length=1, max_length=255)
+    size: int = Field(gt=0)
+
+
+class UploadFinalize(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+    staging_path: str = Field(min_length=1, max_length=600)
+    classification: Classification
+    department: str = Field(default="", max_length=80)

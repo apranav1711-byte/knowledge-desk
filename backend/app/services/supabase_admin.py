@@ -59,6 +59,14 @@ async def storage_get(path: str) -> bytes:
     return r.content
 
 
+async def storage_upload_url(path: str) -> str:
+    """One-time signed URL the browser can PUT a file to directly (bypasses the API's request-size limit)."""
+    r = await _request("POST", f"/storage/v1/object/upload/sign/{settings.STORAGE_BUCKET}/{path}")
+    if r.status_code >= 400:
+        raise HTTPException(502, "Could not prepare the upload")
+    return f"{_base()}/storage/v1{r.json()['url']}"
+
+
 async def storage_delete(path: str) -> None:
     await _request("DELETE", f"/storage/v1/object/{settings.STORAGE_BUCKET}/{path}")
 

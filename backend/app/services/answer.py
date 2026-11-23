@@ -47,7 +47,14 @@ def _best_sentences(question: str, hit: dict, limit: int = 2) -> list[str]:
         return ["\n".join(header + [r for _, r in sorted(picked)])]
     sentences = [s.strip() for s in re.split(r"(?<=[.!?])\s+|\n+", hit["content"]) if len(s.strip()) > 3]
     scored = sorted(((len(q & terms(s)), -i, s) for i, s in enumerate(sentences)), reverse=True)
-    best = [(-neg, s) for sc, neg, s in scored[:limit] if sc > 0]
+    best, keys = [], set()
+    for sc, neg, s in scored:
+        if sc <= 0 or len(best) >= limit:
+            break
+        k = s.lower()
+        if k not in keys:  # a passage may repeat the same sentence
+            keys.add(k)
+            best.append((-neg, s))
     return [s for _, s in sorted(best)]
 
 
@@ -63,11 +70,16 @@ def build_answer(question: str, hits: list[dict], max_sources: int = 3) -> Answe
     supported = [h for h in hits if is_supported(question, h)]
     if not supported:
         return Answer(FALLBACK, "fallback", [], "insufficient_evidence")
-    sources, parts = [], []
+    sources, parts, seen = [], [], set()
     for hit in supported:
         if len(sources) >= max_sources:
             break
-        picked = _best_sentences(question, hit)
+        picked = []
+        for s in _best_sentences(question, hit):  # drop sentences already quoted (same text in several passages)
+            key = " ".join(terms(s)) if hit["kind"] != "table" else s
+            if key and key not in seen:
+                seen.add(key)
+                picked.append(s)
         if not picked:
             continue
         cid = f"C{len(sources) + 1}"
