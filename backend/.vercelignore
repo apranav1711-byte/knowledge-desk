@@ -1,0 +1,9 @@
+.venv
+data
+tests
+demo
+sample_uploads
+.env
+__pycache__
+.pytest_cache
+Dockerfile

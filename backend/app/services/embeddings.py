@@ -60,6 +60,34 @@ class BgeEmbedder:
         return self._embed([QUERY_PREFIX + text])[0]
 
 
+class HfEmbedder:
+    """Same BAAI/bge-small-en-v1.5 vectors, computed by the Hugging Face Inference API (for serverless hosts)."""
+
+    def __init__(self):
+        import httpx
+
+        self.name = settings.EMBEDDING_MODEL
+        self._url = f"https://router.huggingface.co/hf-inference/models/{settings.EMBEDDING_MODEL}/pipeline/feature-extraction"
+        self._http = httpx.Client(timeout=60, headers={"Authorization": f"Bearer {settings.HF_TOKEN}"})
+
+    def _embed(self, texts: list[str]) -> list[list[float]]:
+        out = []
+        for i in range(0, len(texts), 32):
+            r = self._http.post(self._url, json={"inputs": texts[i:i + 32], "options": {"wait_for_model": True}})
+            r.raise_for_status()
+            for v in r.json():
+                v = np.asarray(v, dtype=np.float32)
+                n = np.linalg.norm(v)
+                out.append((v / n if n else v).tolist())
+        return out
+
+    def embed_passages(self, texts: list[str]) -> list[list[float]]:
+        return self._embed(texts)
+
+    def embed_query(self, text: str) -> list[float]:
+        return self._embed([QUERY_PREFIX + text])[0]
+
+
 _embedder = None
 _lock = threading.Lock()
 
@@ -68,5 +96,5 @@ def get_embedder():
     global _embedder
     with _lock:
         if _embedder is None:
-            _embedder = HashEmbedder() if settings.EMBEDDING_BACKEND == "hash" else BgeEmbedder()
+            _embedder = {"hash": HashEmbedder, "hf": HfEmbedder}.get(settings.EMBEDDING_BACKEND, BgeEmbedder)()
         return _embedder

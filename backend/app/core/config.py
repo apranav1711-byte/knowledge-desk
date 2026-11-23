@@ -20,7 +20,8 @@ class Settings(BaseSettings):
     DEFAULT_TENANT_ID: str = "00000000-0000-0000-0000-000000000001"
     CORS_ORIGINS: str = "http://localhost:5173"
 
-    EMBEDDING_BACKEND: Literal["bge", "hash"] = "bge"
+    EMBEDDING_BACKEND: Literal["bge", "hash", "hf"] = "bge"  # hf = Hugging Face Inference API (serverless, no local model)
+    HF_TOKEN: str = ""
     EMBEDDING_MODEL: str = "BAAI/bge-small-en-v1.5"
     MODEL_CACHE_DIR: Path = BASE_DIR / "data" / "models"
     RETRIEVAL_MIN_SCORE: float = 0.55
