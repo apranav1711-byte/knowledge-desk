@@ -8,6 +8,7 @@ from __future__ import annotations
 import hashlib
 import re
 import threading
+from pathlib import Path
 
 import numpy as np
 
@@ -37,9 +38,17 @@ class HashEmbedder:
 
 class BgeEmbedder:
     def __init__(self):
+        import os
+        import shutil
+
         from fastembed import TextEmbedding
 
         settings.MODEL_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+        bundled = Path(__file__).resolve().parents[2] / "bundled_model"  # shipped with serverless deploys
+        if bundled.is_dir():
+            if not any(settings.MODEL_CACHE_DIR.glob("models--*")):
+                shutil.copytree(bundled, settings.MODEL_CACHE_DIR, dirs_exist_ok=True)
+            os.environ["HF_HUB_OFFLINE"] = "1"  # never download at runtime when the model is bundled
         self.name = settings.EMBEDDING_MODEL
         self._model = TextEmbedding(model_name=settings.EMBEDDING_MODEL, cache_dir=str(settings.MODEL_CACHE_DIR))
         self._lock = threading.Lock()

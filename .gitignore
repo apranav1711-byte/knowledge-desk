@@ -94,3 +94,4 @@ backend/data/
 .env*
 .admin-initial-password.txt
 test-files/
+backend/bundled_model/
