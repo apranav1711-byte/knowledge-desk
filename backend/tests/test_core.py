@@ -116,3 +116,18 @@ def test_hash_embedder_is_deterministic_and_normalised():
     v1, v2 = e.embed_query("annual leave days"), e.embed_query("annual leave days")
     assert v1 == v2 and len(v1) == 384 and abs(sum(x * x for x in v1) - 1) < 1e-4
     assert coverage("annual leave", "employees get annual leave") == 1.0
+
+
+def test_answer_skips_duplicate_sentences_but_keeps_different_numbers():
+    from app.services.answer import build_answer
+
+    def hit(i, text):
+        return dict(chunk_id=i, document_id=i, title=f"d{i}", page=1, section="", kind="text", content=text,
+                    classification="Public", dense_score=0.9, lexical_score=0.5)
+
+    q = "How many days of annual leave do employees get?"
+    a = build_answer(q, [hit(1, "Employees receive 24 days of annual leave. " * 3),
+                         hit(2, "Employees receive 24 days of annual leave."),
+                         hit(3, "Grade B employees receive 28 days of annual leave.")])
+    assert a.text.count("24 days") == 1
+    assert "28 days" in a.text

@@ -58,6 +58,15 @@ def _best_sentences(question: str, hit: dict, limit: int = 2) -> list[str]:
     return [s for _, s in sorted(best)]
 
 
+def _near_dup(a: frozenset, b: frozenset) -> bool:
+    """Same fact quoted twice (e.g. identical policy text in two files, or a PDF line-break split a word).
+    Sentences whose numbers differ are never treated as duplicates: different numbers are different facts."""
+    num = lambda s: {w for w in s if any(ch.isdigit() for ch in w)}
+    if num(a) != num(b):
+        return False
+    return a <= b or len(a & b) / len(a | b) >= 0.7
+
+
 @dataclass
 class Answer:
     text: str
@@ -82,7 +91,7 @@ def build_answer(question: str, hits: list[dict], max_sources: int = 3) -> Answe
                     picked.append(s)
                 continue
             t = frozenset(terms(s))
-            if t and not any(t <= prev or (len(t & prev) / len(t | prev)) >= 0.8 for prev in seen if isinstance(prev, frozenset)):
+            if t and not any(_near_dup(t, prev) for prev in seen if isinstance(prev, frozenset)):
                 seen.add(t)
                 picked.append(s)
         if not picked:
