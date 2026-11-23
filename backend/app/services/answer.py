@@ -75,10 +75,15 @@ def build_answer(question: str, hits: list[dict], max_sources: int = 3) -> Answe
         if len(sources) >= max_sources:
             break
         picked = []
-        for s in _best_sentences(question, hit):  # drop sentences already quoted (same text in several passages)
-            key = " ".join(terms(s)) if hit["kind"] != "table" else s
-            if key and key not in seen:
-                seen.add(key)
+        for s in _best_sentences(question, hit):  # drop sentences already quoted (same or near-same text elsewhere)
+            if hit["kind"] == "table":
+                if s not in seen:
+                    seen.add(s)
+                    picked.append(s)
+                continue
+            t = frozenset(terms(s))
+            if t and not any(t <= prev or (len(t & prev) / len(t | prev)) >= 0.8 for prev in seen if isinstance(prev, frozenset)):
+                seen.add(t)
                 picked.append(s)
         if not picked:
             continue
