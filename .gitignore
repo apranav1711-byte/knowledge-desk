@@ -94,3 +94,11 @@ backend/data/
 .env*
 .admin-initial-password.txt
 test-files/
+
+# voice-over working files
+*.mp4
+*.srt
+voiceover/.venv/
+voiceover/audio/
+voiceover/frames/
+voiceover/sheet_*.jpg

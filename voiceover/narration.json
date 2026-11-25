@@ -1,0 +1,114 @@
+{
+  "video": "../less.mp4",
+  "output": "../less-voiceover.mp4",
+  "voice": "en-US-AndrewNeural",
+  "rate": "+0%",
+  "segments": [
+    {
+      "start": 0.5,
+      "scene": "Admin signs in, Overview dashboard",
+      "text": "Meet Knowledge Desk: a secure assistant that answers questions using only your company's own documents. We're signed in as the administrator."
+    },
+    {
+      "start": 9.0,
+      "scene": "Documents list with classification badges",
+      "text": "Thirteen documents are indexed, each tagged with an access level, from Public all the way up to Restricted."
+    },
+    {
+      "start": 15.8,
+      "scene": "Users page, Analytics",
+      "text": "Four roles: administrator, manager, HR specialist and employee."
+    },
+    {
+      "start": 20.6,
+      "scene": "Audit page",
+      "text": "And every action is recorded in a tamper-evident audit log."
+    },
+    {
+      "start": 25.0,
+      "scene": "Assistant: clicks the annual-leave starter question",
+      "text": "Let's ask a question: how many annual leave days do employees get?"
+    },
+    {
+      "start": 30.4,
+      "scene": "Answer with citation C1 and the evidence panel",
+      "text": "The answer is quoted straight from the policy, with a citation pointing to the exact passage it came from."
+    },
+    {
+      "start": 39.2,
+      "scene": "Documents: opens a document's passages",
+      "text": "Any document can be opened to see exactly how it was split into searchable passages."
+    },
+    {
+      "start": 48.4,
+      "scene": "Deletes the document",
+      "text": "Deleting a document removes it from search instantly."
+    },
+    {
+      "start": 54.2,
+      "scene": "Add document: picks policy.docx, General Internal",
+      "text": "Now we upload a Word file, choose who may access it, and index it."
+    },
+    {
+      "start": 61.8,
+      "scene": "Indexing, then Ready",
+      "text": "In seconds, it's parsed, split into passages, and ready to search."
+    },
+    {
+      "start": 68.2,
+      "scene": "Assistant: remote work policy question",
+      "text": "Another question: what is the remote work policy? Two days a week, with manager approval, and again, with its source."
+    },
+    {
+      "start": 78.6,
+      "scene": "Users page, signs out, signs in as Maya",
+      "text": "Now, what can a manager see? We sign in as Maya, from Sales."
+    },
+    {
+      "start": 93.8,
+      "scene": "Maya's overview and document list",
+      "text": "Maya has three of five clearance levels. HR Confidential and Restricted documents don't even appear in her list: ten documents instead of thirteen."
+    },
+    {
+      "start": 106.6,
+      "scene": "Maya asks the annual-leave question",
+      "text": "General policies work exactly the same for her."
+    },
+    {
+      "start": 111.8,
+      "scene": "Maya asks about Policy STR-501: insufficient evidence",
+      "text": "But when she asks about Policy STR-501, a restricted strategy document, the answer is simply: not enough information. The content is never retrieved, so it can't leak.",
+      "say": "But when she asks about Policy S T R, five oh one, a restricted strategy document, the answer is simply: not enough information. The content is never retrieved, so it can't leak."
+    },
+    {
+      "start": 124.6,
+      "scene": "Admin signs back in, opens the Restricted expansion strategy",
+      "text": "Back as the administrator, we can open that document. It's the restricted Project Cedar expansion strategy."
+    },
+    {
+      "start": 139.6,
+      "scene": "Admin asks the same STR-501 question",
+      "text": "Ask the same question as an administrator, and the answer comes back with its source, marked Restricted."
+    },
+    {
+      "start": 153.4,
+      "scene": "Analytics",
+      "text": "Analytics shows usage, latency, and zero access violations."
+    },
+    {
+      "start": 158.4,
+      "scene": "Travel expense question: three cited sources, thumbs-up",
+      "text": "A broader question pulls evidence from three different policies, each one cited, and every answer can be rated."
+    },
+    {
+      "start": 168.6,
+      "scene": "Audit: security check and audit chain verification",
+      "text": "Finally, the built-in security check probes every document as every role: zero leaks in fifty-two trials. And the audit chain confirms no record has been tampered with."
+    },
+    {
+      "start": 182.4,
+      "scene": "Signs out",
+      "text": "Knowledge Desk: answers your team can trust, from documents they're allowed to see."
+    }
+  ]
+}
