@@ -1,23 +1,23 @@
 {
   "video": "../less.mp4",
   "output": "../less-voiceover.mp4",
-  "voice": "en-US-AndrewNeural",
-  "rate": "+0%",
+  "voice": "en-IN-NeerjaNeural",
+  "rate": "+10%",
   "segments": [
     {
       "start": 0.5,
       "scene": "Admin signs in, Overview dashboard",
-      "text": "Meet Knowledge Desk: a secure assistant that answers questions using only your company's own documents. We're signed in as the administrator."
+      "text": "Meet Knowledge Desk: a secure assistant that answers from your company's own documents. We're signed in as the admin."
     },
     {
       "start": 9.0,
       "scene": "Documents list with classification badges",
-      "text": "Thirteen documents are indexed, each tagged with an access level, from Public all the way up to Restricted."
+      "text": "Thirteen documents are indexed, each with an access level, from Public up to Restricted."
     },
     {
       "start": 15.8,
       "scene": "Users page, Analytics",
-      "text": "Four roles: administrator, manager, HR specialist and employee."
+      "text": "Four users, each with a different role."
     },
     {
       "start": 20.6,
@@ -91,9 +91,9 @@
       "text": "Ask the same question as an administrator, and the answer comes back with its source, marked Restricted."
     },
     {
-      "start": 153.4,
+      "start": 152.8,
       "scene": "Analytics",
-      "text": "Analytics shows usage, latency, and zero access violations."
+      "text": "Analytics: usage, latency, and zero access violations."
     },
     {
       "start": 158.4,
@@ -108,7 +108,8 @@
     {
       "start": 182.4,
       "scene": "Signs out",
-      "text": "Knowledge Desk: answers your team can trust, from documents they're allowed to see."
+      "text": "Knowledge Desk: answers you can trust, from documents you're allowed to see."
     }
-  ]
+  ],
+  "subtitles": "both"
 }
