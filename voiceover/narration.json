@@ -1,8 +1,8 @@
 {
   "video": "../less.mp4",
   "output": "../less-voiceover.mp4",
-  "voice": "en-IN-NeerjaNeural",
-  "rate": "+10%",
+  "voice": "en-US-AvaNeural",
+  "rate": "+0%",
   "segments": [
     {
       "start": 0.5,
