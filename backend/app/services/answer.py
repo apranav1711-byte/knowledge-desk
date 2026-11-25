@@ -41,7 +41,8 @@ def _best_sentences(question: str, hit: dict, limit: int = 2) -> list[str]:
         lines = hit["content"].splitlines()
         header, rows = lines[:2], lines[2:]
         scored = sorted(((len(q & terms(r)), i, r) for i, r in enumerate(rows)), reverse=True)
-        picked = [(i, r) for s, i, r in scored[: limit + 1] if s > 0]
+        best = scored[0][0] if scored else 0  # only the rows that match the question best, not every partial match
+        picked = [(i, r) for s, i, r in scored[: limit + 1] if s > 0 and s == best]
         if not picked:
             return []
         return ["\n".join(header + [r for _, r in sorted(picked)])]
