@@ -2,7 +2,7 @@
 
 Role-based search over company documents. **No LLM**: answers are quoted from your documents with citations, and the assistant says so when evidence is missing.
 
-- **Website (online):** https://accenture-knowledge-desk.vercel.app — the React frontend, deployed on Vercel from `frontend/`.
+- **Website (online):** https://knowledgedesk.vercel.app — the React frontend, deployed on Vercel from `frontend/`.
 - **Backend (this PC only):** FastAPI on `http://localhost:8000`. Everything stays on this computer in `backend/data/`:
   the SQLite database, uploaded files, and the key that signs sign-in sessions. No cloud database or storage.
 - **Security:** role filtering happens inside the database query, before ranking, with a re-check afterwards. Passwords are

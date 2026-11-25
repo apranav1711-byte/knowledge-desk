@@ -6,7 +6,7 @@ real document with its source, and nobody ever sees content above their clearanc
 ## Before you record (5 minutes)
 
 1. Start the backend: double-click `start-knowledge-desk.cmd` and keep the window open.
-2. Open https://accenture-knowledge-desk.vercel.app in Chrome. If Chrome asks about local network access, click **Allow**
+2. Open https://knowledgedesk.vercel.app in Chrome. If Chrome asks about local network access, click **Allow**
    now, so the prompt doesn't appear on camera.
 3. Sign in as yourself and ask any one question, so the search model is warmed up and the first on-camera answer is instant.
 4. In **Documents**, delete **IT Security Handbook**, so you can upload it live in Scene 2

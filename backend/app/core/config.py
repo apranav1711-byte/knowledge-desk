@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     JWT_SECRET: str = ""  # empty = generated once and kept in data/jwt_secret
     SESSION_HOURS: int = 12
     DEFAULT_TENANT_ID: str = "00000000-0000-0000-0000-000000000001"
-    CORS_ORIGINS: str = "https://accenture-knowledge-desk.vercel.app,http://localhost:5173"
+    CORS_ORIGINS: str = "https://knowledgedesk.vercel.app,http://localhost:5173"
 
     EMBEDDING_BACKEND: Literal["bge", "hash", "hf"] = "bge"  # hf = Hugging Face Inference API (serverless, no local model)
     HF_TOKEN: str = ""

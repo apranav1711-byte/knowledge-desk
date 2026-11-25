@@ -102,3 +102,8 @@ voiceover/.venv/
 voiceover/audio/
 voiceover/frames/
 voiceover/sheet_*.jpg
+
+# local-only
+*.mp3
+.claude/
+backend/bundled_model/

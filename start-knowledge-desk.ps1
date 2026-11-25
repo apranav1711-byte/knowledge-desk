@@ -1,8 +1,8 @@
 # Starts the Knowledge Desk backend on this PC and opens the website. Keep this window open while you use the app.
-# The website (https://accenture-knowledge-desk.vercel.app) talks to it at http://localhost:8000.
+# The website (https://knowledgedesk.vercel.app) talks to it at http://localhost:8000.
 $ErrorActionPreference = 'Stop'
 $Host.UI.RawUI.WindowTitle = 'Knowledge Desk backend - keep this window open'
-$Site = 'https://accenture-knowledge-desk.vercel.app'
+$Site = 'https://knowledgedesk.vercel.app'
 Set-Location (Join-Path $PSScriptRoot 'backend')
 
 # Already running? Then just open the website.
