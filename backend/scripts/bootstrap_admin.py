@@ -1,36 +1,33 @@
-"""Create the first administrator (run once, after applying the migration).
+"""Create an administrator account in the local database.
 
-    cd backend && python -m scripts.bootstrap_admin you@company.com "Your Name"
+    cd backend
+    .venv\\Scripts\\python -m scripts.bootstrap_admin you@company.com "Your Name"
 
-Prompts for a password (min 10 chars). Needs DATABASE_URL, SUPABASE_URL and
-SUPABASE_SERVICE_ROLE_KEY in backend/.env.
+A random password is generated and written to data/initial-admin-password.txt (never printed).
+Sign in with it, change it from the account menu, then delete that file.
 """
 import asyncio
-import getpass
+import secrets
 import sys
 
-from app.core.db import close_pool, pool
-from app.services import supabase_admin
-
-DEFAULT_TENANT = "00000000-0000-0000-0000-000000000001"
+from app.core.auth import hash_password
+from app.core.config import settings
+from app.core.db import DEFAULT_TENANT, close_pool, new_id, now, pool
 
 
 async def main(email: str, name: str) -> None:
-    password = getpass.getpass("Password (min 10 chars): ")
-    if len(password) < 10:
-        sys.exit("Password too short.")
     p = await pool()
-    if await p.fetchval("select 1 from public.profiles where lower(email)=lower($1)", email):
+    if await p.fetchval("select 1 from profiles where lower(email)=lower(?)", email):
         sys.exit("That user already exists.")
-    uid = await supabase_admin.create_auth_user(email, password, name)
-    try:
-        await p.execute(
-            "insert into public.profiles (id, tenant_id, email, full_name, department, role) "
-            "values ($1::uuid,$2::uuid,$3,$4,'Administration','admin')", uid, DEFAULT_TENANT, email, name)
-    except Exception:
-        await supabase_admin.delete_auth_user(uid)
-        raise
-    print(f"Admin created: {email}")
+    password = secrets.token_urlsafe(14)
+    ts = now()
+    await p.execute(
+        "insert into profiles (id, tenant_id, email, full_name, department, role, password_hash, created_at, updated_at) "
+        "values (?,?,?,?,'Administration','admin',?,?,?)",
+        new_id(), DEFAULT_TENANT, email, name, hash_password(password), ts, ts)
+    out = settings.DATA_DIR / "initial-admin-password.txt"
+    out.write_text(password, encoding="utf-8")
+    print(f"Admin created: {email}\nPassword saved to: {out}")
     await close_pool()
 
 

@@ -41,29 +41,33 @@ def test_delegated_upload_rules():
 SECRET = "x" * 48
 
 
-def _token(**over):
-    claims = {"sub": "11111111-1111-1111-1111-111111111111", "aud": "authenticated", "exp": int(time.time()) + 60, **over}
-    return jwt.encode(claims, SECRET, algorithm="HS256")
 
-
-def test_decode_valid_and_rejects_bad(monkeypatch):
-    monkeypatch.setattr(settings, "SUPABASE_JWT_SECRET", SECRET)
-    assert auth.decode_token(_token())["sub"].startswith("1111")
+def test_session_token_roundtrip_and_rejections(monkeypatch):
+    monkeypatch.setattr(settings, "JWT_SECRET", SECRET)
+    auth.signing_key.cache_clear()
+    tok = auth.issue_token("11111111-1111-1111-1111-111111111111")
+    assert auth.decode_token(tok)["sub"].startswith("1111")
     with pytest.raises(jwt.PyJWTError):
-        auth.decode_token(_token(exp=int(time.time()) - 5))  # expired
-    with pytest.raises(jwt.PyJWTError):
-        auth.decode_token(_token(aud="anon"))  # wrong audience
-    with pytest.raises(jwt.PyJWTError):
-        auth.decode_token(jwt.encode({"sub": "a", "aud": "authenticated", "exp": int(time.time()) + 60}, "y" * 48, algorithm="HS256"))
-    unsigned = jwt.encode({"sub": "a", "aud": "authenticated", "exp": int(time.time()) + 60}, None, algorithm="none")
+        auth.decode_token(auth.issue_token("a", seconds=-5))  # expired
+    with pytest.raises(jwt.PyJWTError):  # a download link can never be used as a session
+        auth.decode_token(auth.issue_token("a", purpose="download", seconds=60))
+    with pytest.raises(jwt.PyJWTError):  # wrong signing key
+        auth.decode_token(jwt.encode({"sub": "a", "aud": auth.AUDIENCE, "purpose": "session",
+                                      "exp": int(time.time()) + 60}, "y" * 48, algorithm="HS256"))
+    unsigned = jwt.encode({"sub": "a", "aud": auth.AUDIENCE, "purpose": "session", "exp": int(time.time()) + 60},
+                          None, algorithm="none")
     with pytest.raises(jwt.PyJWTError):
         auth.decode_token(unsigned)  # alg=none is never accepted
+    auth.signing_key.cache_clear()
 
 
-def test_hs256_refused_without_configured_secret(monkeypatch):
-    monkeypatch.setattr(settings, "SUPABASE_JWT_SECRET", "")
-    with pytest.raises(jwt.PyJWTError):
-        auth.decode_token(_token())
+def test_password_hashing():
+    h = auth.hash_password("correct horse battery")
+    assert h.startswith("scrypt$") and "correct" not in h
+    assert auth.verify_password("correct horse battery", h)
+    assert not auth.verify_password("wrong password!!", h)
+    assert not auth.verify_password("anything", "garbage")
+    assert auth.hash_password("same") != auth.hash_password("same")  # salted
 
 
 def test_protected_routes_require_token():

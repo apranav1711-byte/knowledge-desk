@@ -1,4 +1,4 @@
-"""Access-control lattice. Mirrors private.roles_for_classification() in the SQL migration."""
+"""Access-control lattice. Mirrored by the re-classification trigger in core/db.py."""
 ROLE_EMPLOYEE, ROLE_MANAGER, ROLE_HR, ROLE_ADMIN = "employee", "manager", "hr", "admin"
 ALL_ROLES = [ROLE_EMPLOYEE, ROLE_MANAGER, ROLE_HR, ROLE_ADMIN]
 

@@ -1,11 +1,14 @@
 # Knowledge Desk — secure enterprise knowledge assistant
 
-Role-based RAG over company documents. **No LLM**: answers are extractive, quoted from your documents with citations, and the assistant says so when evidence is missing.
+Role-based search over company documents. **No LLM**: answers are quoted from your documents with citations, and the assistant says so when evidence is missing.
 
-- **Backend:** FastAPI + Supabase (Auth, Postgres/pgvector, Storage)
-- **Frontend:** React + Vite dashboard (Overview, Assistant, Documents, Users, Analytics, Audit)
-- **Security:** access is enforced *inside the retrieval SQL* (before ranking), with RLS on every table and a runtime re-check. Tamper-evident hash-chained audit log.
-- **Parsing:** PDF (tables, headings, optional OCR), DOCX, XLSX, CSV, PPTX, HTML, MD, TXT.
+- **Website (online):** https://accenture-knowledge-desk.vercel.app — the React frontend, deployed on Vercel from `frontend/`.
+- **Backend (this PC only):** FastAPI on `http://localhost:8000`. Everything stays on this computer in `backend/data/`:
+  the SQLite database, uploaded files, and the key that signs sign-in sessions. No cloud database or storage.
+- **Security:** role filtering happens inside the database query, before ranking, with a re-check afterwards. Passwords are
+  hashed with scrypt, sign-ins are rate-limited, download links expire after 60 seconds, and the audit log is hash-chained
+  (tamper-evident) and append-only.
+- **Parsing:** PDF, DOCX, XLSX, CSV, PPTX, HTML, Markdown, TXT, up to 25 MB per file.
 
 | Role | Can read |
 | --- | --- |
@@ -14,29 +17,29 @@ Role-based RAG over company documents. **No LLM**: answers are extractive, quote
 | hr | + HR Confidential (not Management) |
 | admin | everything, plus users / audit / analytics |
 
-## Setup
+## Use it
 
-1. **Supabase:** create/restore a project, apply `supabase/migrations/*.sql` (SQL editor or `supabase db push`).
-   In Auth → Providers → Email: **disable "Allow new users to sign up"** (admins create accounts).
-   Auth → URL config: add your frontend URL as a redirect (needed for invite/reset links).
-2. **Backend:**
-   ```bash
-   cd backend && python -m venv .venv && source .venv/bin/activate
-   pip install -r requirements.txt
-   cp .env.example .env   # fill SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, DATABASE_URL (+ SUPABASE_JWT_SECRET only for legacy HS256 projects)
-   python -m scripts.bootstrap_admin you@company.com "Your Name"
-   uvicorn app.main:app --reload --port 8000
-   ```
-   First run downloads the embedding model (~130 MB). The service-role key is server-side only — never put it in the frontend.
-3. **Frontend:**
-   ```bash
-   cd frontend && cp .env.example .env   # VITE_SUPABASE_URL, VITE_SUPABASE_PUBLISHABLE_KEY, VITE_API_URL=http://localhost:8000
-   npm install && npm run dev
-   ```
-4. Log in, add users under **Users**, upload files from `backend/sample_uploads` and `backend/demo`, then run **Audit → Security check**.
+1. Double-click **`start-knowledge-desk.cmd`** (or run `.\start-knowledge-desk.ps1`). Keep that window open.
+   The first run installs Python packages (a few minutes).
+2. The website opens. Sign in. If Chrome asks to let the site access devices on your local network, choose **Allow**:
+   that is how the website reaches the backend on your PC.
+3. Close the window (or press Ctrl+C) to stop. The website only works on this PC while the backend is running.
 
-## Tests
-`cd backend && pytest` (22 tests: parsers, ACL truth table, JWT validation, answer guard; uses a hash embedder, no model download).
+**First administrator** (run once):
+```powershell
+cd backend
+.venv\Scripts\python -m scripts.bootstrap_admin you@company.com "Your Name"
+```
+The password goes to `backend\data\initial-admin-password.txt`. Sign in, change it (click your initials, top right),
+then delete that file. Admins add other users, and reset forgotten passwords, under **Users**.
 
-## Known limits
-Scanned PDFs need Tesseract for OCR (otherwise rejected with a clear message). The hash chain cannot detect deletion of the newest records without an external checkpoint. Extractive answers quote passages; they don't synthesize across documents.
+**Backup:** copy the `backend\data` folder while the backend is stopped.
+
+## Develop
+
+```powershell
+cd backend; .venv\Scripts\python -m uvicorn app.main:app --reload --port 8000
+cd frontend; npm install; npm run dev      # http://localhost:5173
+cd backend; .venv\Scripts\python -m pip install -r requirements-local.txt; .venv\Scripts\python -m pytest
+```
+Pushing to `main` redeploys the website on Vercel. Its `VITE_API_URL` is `http://localhost:8000`.

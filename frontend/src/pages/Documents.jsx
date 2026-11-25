@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Download, Eye, FileText, Pencil, Search, Trash2, Upload } from 'lucide-react';
-import { api, CLASSIFICATIONS, fmtBytes, fmtDate, labelClass } from '../api';
+import { API, api, CLASSIFICATIONS, fmtBytes, fmtDate, labelClass } from '../api';
 import { Card, ClassBadge, Empty, Modal, Spinner, StatusBadge } from '../components/ui';
 import { DocViewer } from './Assistant';
 
@@ -19,11 +19,8 @@ function UploadModal({ me, onClose, onDone, notify }) {
   const submit = async () => {
     setBusy(true);
     try {
-      // Direct-to-storage upload: large files never pass through the API's request-size limit.
-      const { upload_url, staging_path } = await api('/documents/upload-url', { method: 'POST', body: { filename: file.name, size: file.size } });
-      const put = await fetch(upload_url, { method: 'PUT', headers: { 'Content-Type': file.type || 'application/octet-stream' }, body: file }).catch(() => null);
-      if (!put?.ok) throw new Error('The file could not be uploaded. Check your connection and try again.');
-      const r = await api('/documents/finalize', { method: 'POST', body: { staging_path, classification, department } });
+      const form = new FormData(); form.append('file', file); form.append('classification', classification); form.append('department', department);
+      const r = await api('/documents', { method: 'POST', form });
       notify(r.duplicate ? 'This file is already in the library.' : `${file.name} uploaded. Indexing…`);
       onDone(); onClose();
     } catch (e) { notify(e.message, 'err'); setBusy(false); }
@@ -80,7 +77,7 @@ export default function Documents({ me, notify }) {
   }, [docs, load]);
 
   const shown = (docs || []).filter((d) => d.title.toLowerCase().includes(q.toLowerCase()) && (filter === 'all' || d.classification === filter));
-  const download = async (d) => { try { const r = await api(`/documents/${d.id}/download`); window.open(r.url, '_blank', 'noopener'); } catch (e) { notify(e.message, 'err'); } };
+  const download = async (d) => { try { const r = await api(`/documents/${d.id}/download`); window.open(r.url.startsWith('/') ? API + r.url : r.url, '_blank', 'noopener'); } catch (e) { notify(e.message, 'err'); } };
   const remove = async () => {
     try { await api(`/documents/${confirmDel.id}`, { method: 'DELETE' }); notify('Document deleted and removed from search.'); setConfirmDel(null); load(); }
     catch (e) { notify(e.message, 'err'); }

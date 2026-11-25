@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { BarChart3, FileText, LayoutDashboard, LogOut, MessageSquareText, ShieldCheck, Users as UsersIcon } from 'lucide-react';
-import { api } from './api';
-import { supabase, configured } from './supabase';
+import { api, session } from './api';
 import { Spinner, Toast, RoleBadge } from './components/ui';
-import { AccessProblem, ConfigMissing, Login, SetPassword } from './pages/Auth';
+import { AccessProblem, ChangePassword, Login } from './pages/Auth';
 import Overview from './pages/Overview';
 import Assistant from './pages/Assistant';
 import Documents from './pages/Documents';
@@ -14,44 +13,33 @@ import Audit from './pages/Audit';
 const initials = (n) => (n || '?').split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0].toUpperCase()).join('');
 
 export default function App() {
-  if (!configured) return <ConfigMissing />;
-  return <Authenticated />;
-}
-
-function Authenticated() {
-  const [session, setSession] = useState(undefined); // undefined = still loading
-  const [settingPassword, setSettingPassword] = useState(() => /type=(invite|recovery)/.test(window.location.hash));
+  const [token, setToken] = useState(() => session.get());
   const [me, setMe] = useState(null);
   const [problem, setProblem] = useState('');
   const [page, setPage] = useState('overview');
   const [pageArg, setPageArg] = useState(null);
   const [toast, setToast] = useState(null);
+  const [changingPw, setChangingPw] = useState(false);
   const notify = useCallback((text, tone = 'ok') => setToast({ text, tone, id: Date.now() }), []);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => setSession(data.session));
-    const { data: sub } = supabase.auth.onAuthStateChange((event, s) => {
-      setSession(s);
-      if (event === 'PASSWORD_RECOVERY') setSettingPassword(true);
-      if (event === 'SIGNED_OUT') { setMe(null); setProblem(''); setPage('overview'); }
-    });
-    return () => sub.subscription.unsubscribe();
+    const sync = () => setToken(session.get());
+    window.addEventListener('kd-session', sync);
+    window.addEventListener('storage', sync); // sign-in/out in another tab
+    return () => { window.removeEventListener('kd-session', sync); window.removeEventListener('storage', sync); };
   }, []);
 
-  const userId = session?.user?.id;
-  useEffect(() => {
-    if (!userId || settingPassword) return;
+  const loadMe = useCallback(() => {
     setProblem(''); setMe(null);
-    api('/me').then(setMe).catch((e) => setProblem(e.status === 403 ? e.message : e.status === 0 ? e.message : 'Could not load your profile. ' + e.message));
-  }, [userId, settingPassword]);
+    api('/me').then(setMe).catch((e) => { if (e.status !== 401) setProblem(e.message); });
+  }, []);
+  useEffect(() => { if (token) loadMe(); else { setMe(null); setProblem(''); setPage('overview'); } }, [token, loadMe]);
 
-  const signOut = () => supabase.auth.signOut();
+  const signOut = () => session.clear();
   const go = (p, arg = null) => { setPage(p); setPageArg(arg); window.scrollTo(0, 0); };
 
-  if (session === undefined) return <div className="login-form-wrap" style={{ minHeight: '100vh' }}><Spinner size={24} /></div>;
-  if (settingPassword && session) return <SetPassword onDone={() => setSettingPassword(false)} />;
-  if (!session) return <Login />;
-  if (problem) return <AccessProblem message={problem} onSignOut={signOut} />;
+  if (!token) return <Login />;
+  if (problem) return <AccessProblem message={problem} onSignOut={signOut} onRetry={loadMe} />;
   if (!me) return <div className="login-form-wrap" style={{ minHeight: '100vh' }}><Spinner size={24} /></div>;
 
   const nav = [
@@ -72,7 +60,7 @@ function Authenticated() {
         <div className="user-chip">
           <div className="who"><div>{me.full_name || me.email}</div></div>
           <RoleBadge value={me.role} />
-          <span className="avatar" aria-hidden>{initials(me.full_name || me.email)}</span>
+          <button className="avatar" style={{ border: 0 }} title="Change password" aria-label="Change password" onClick={() => setChangingPw(true)}>{initials(me.full_name || me.email)}</button>
           <button className="icon-btn" onClick={signOut} title="Sign out" aria-label="Sign out"><LogOut size={18} /></button>
         </div>
       </header>
@@ -86,6 +74,7 @@ function Authenticated() {
           {page === 'audit' && <Audit {...props} />}
         </main>
       </div>
+      {changingPw && <ChangePassword onClose={() => setChangingPw(false)} notify={notify} />}
       <Toast toast={toast} onDone={() => setToast(null)} />
     </div>
   );

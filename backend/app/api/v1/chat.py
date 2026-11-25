@@ -7,7 +7,7 @@ from app.api.v1.schemas import FeedbackIn, Question
 from app.core.acl import can_read
 from app.core.auth import Identity, current_identity
 from app.core.config import settings
-from app.core.db import pool, vec
+from app.core.db import new_id, now, pool
 from app.services import audit
 from app.services.answer import build_answer
 from app.services.embeddings import get_embedder
@@ -24,11 +24,8 @@ async def query(body: Question, user: Identity = Depends(current_identity)):
 
     p = await pool()
     t1 = time.perf_counter()
-    # PRE-retrieval filtering: tenant + role are part of the candidate query inside Postgres.
-    rows = await p.fetch(
-        "select * from private.match_chunks($1::extensions.vector, $2, $3::uuid, $4::text[], 10)",
-        vec(qvec), body.query, user.tenant_id, [user.role],
-    )
+    # PRE-retrieval filtering: tenant + role are part of the candidate query inside the database.
+    rows = await p.match_chunks(qvec, body.query, user.tenant_id, [user.role], 10)
     retrieval_ms = round((time.perf_counter() - t1) * 1000)
     hits = [dict(r) for r in rows]
     # Defence in depth: fail closed if anything unauthorised ever reached this point.
@@ -58,8 +55,8 @@ async def query(body: Question, user: Identity = Depends(current_identity)):
 async def history(user: Identity = Depends(current_identity)):
     p = await pool()
     rows = await p.fetch(
-        "select id, query, mode, created_at from public.audit_logs where tenant_id=$1::uuid and user_id=$2::uuid "
-        "and event='query' order by created_at desc limit 30", user.tenant_id, user.id,
+        "select id, query, mode, created_at from audit_logs where tenant_id=? and user_id=? "
+        "and event='query' order by seq desc limit 30", user.tenant_id, user.id,
     )
     return [dict(id=str(r["id"]), query=r["query"], mode=r["mode"], created_at=r["created_at"]) for r in rows]
 
@@ -67,15 +64,12 @@ async def history(user: Identity = Depends(current_identity)):
 @router.post("/feedback", status_code=201)
 async def feedback(body: FeedbackIn, user: Identity = Depends(current_identity)):
     p = await pool()
-    try:
-        owner = await p.fetchrow("select user_id, tenant_id from public.audit_logs where id=$1::uuid", body.audit_id)
-    except Exception:
-        raise HTTPException(404, "Answer not found")
-    if not owner or str(owner["user_id"]) != user.id or str(owner["tenant_id"]) != user.tenant_id:
+    owner = await p.fetchrow("select user_id, tenant_id from audit_logs where id=?", body.audit_id)
+    if not owner or owner["user_id"] != user.id or owner["tenant_id"] != user.tenant_id:
         raise HTTPException(404, "Answer not found")  # only feedback on your own answers
     await p.execute(
-        "insert into public.feedback (tenant_id, audit_id, user_id, rating, comment) values ($1::uuid,$2::uuid,$3::uuid,$4,$5) "
+        "insert into feedback (id, tenant_id, audit_id, user_id, rating, comment, created_at) values (?,?,?,?,?,?,?) "
         "on conflict (audit_id, user_id) do update set rating=excluded.rating, comment=excluded.comment",
-        user.tenant_id, body.audit_id, user.id, body.rating, body.comment,
+        new_id(), user.tenant_id, body.audit_id, user.id, body.rating, body.comment, now(),
     )
     return {"ok": True}

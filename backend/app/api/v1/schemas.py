@@ -31,7 +31,7 @@ class UserCreate(BaseModel):
     full_name: str = Field(min_length=1, max_length=120)
     department: str = Field(default="", max_length=80)
     role: Role
-    password: str | None = Field(default=None, min_length=10, max_length=72, description="Omit to send an invite email")
+    password: str = Field(min_length=10, max_length=128)
 
 
 class UserPatch(BaseModel):
@@ -40,16 +40,17 @@ class UserPatch(BaseModel):
     department: str | None = Field(default=None, max_length=80)
     role: Role | None = None
     is_active: bool | None = None
+    password: str | None = Field(default=None, min_length=10, max_length=128, description="Admin password reset")
 
 
-class UploadRequest(BaseModel):
+
+class LoginIn(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
-    filename: str = Field(min_length=1, max_length=255)
-    size: int = Field(gt=0)
+    email: str = Field(min_length=3, max_length=254)
+    password: str = Field(min_length=1, max_length=128)
 
 
-class UploadFinalize(BaseModel):
-    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
-    staging_path: str = Field(min_length=1, max_length=600)
-    classification: Classification
-    department: str = Field(default="", max_length=80)
+class PasswordChange(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    current_password: str = Field(min_length=1, max_length=128)
+    new_password: str = Field(min_length=10, max_length=128)

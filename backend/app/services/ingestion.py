@@ -4,6 +4,8 @@ Chunks are written in ONE transaction together with the status flip to 'ready', 
 documents with status='ready' -- so a crash mid-way can never expose partial content.
 """
 import hashlib
+import json
+from datetime import datetime, timedelta, timezone
 import logging
 import re
 from pathlib import Path
@@ -12,8 +14,8 @@ from starlette.concurrency import run_in_threadpool
 
 from app.core.acl import roles_for_classification
 from app.core.auth import Identity
-from app.core.db import pool, vec
-from app.services import audit, supabase_admin
+from app.core.db import new_id, now, pool, vec
+from app.services import audit, storage
 from app.services.chunking import chunk_blocks
 from app.services.embeddings import get_embedder
 from app.services.parsing import ParseError, parse_document
@@ -31,23 +33,25 @@ async def register_upload(user: Identity, filename: str, data: bytes, classifica
     p = await pool()
     checksum = hashlib.sha256(data).hexdigest()
     existing = await p.fetchrow(
-        "select id, status from public.documents where tenant_id=$1::uuid and checksum=$2", user.tenant_id, checksum
+        "select id, status from documents where tenant_id=? and checksum=?", user.tenant_id, checksum
     )
     if existing and existing["status"] in ("ready", "processing"):
         return str(existing["id"]), True
     name = safe_name(filename)
     if existing:  # failed/retired earlier: reuse the row and retry
         await p.execute(
-            "update public.documents set status='processing', error=null, classification=$2, filename=$3 where id=$1::uuid",
-            existing["id"], classification, name,
+            "update documents set status='processing', error=null, classification=?, filename=?, department=?, "
+            "uploaded_by=?, updated_at=? where id=?",
+            classification, name, department, user.id, now(), existing["id"],
         )
         return str(existing["id"]), False
-    doc_id = await p.fetchval(
-        """insert into public.documents (tenant_id, title, filename, file_type, file_size, checksum, classification,
-                                          department, status, uploaded_by)
-           values ($1::uuid,$2,$3,$4,$5,$6,$7,$8,'processing',$9::uuid) returning id""",
-        user.tenant_id, Path(name).stem.replace("_", " ").replace("-", " ").strip() or name, name,
-        Path(name).suffix.lstrip(".").lower(), len(data), checksum, classification, department, user.id,
+    doc_id, ts = new_id(), now()
+    await p.execute(
+        """insert into documents (id, tenant_id, title, filename, file_type, file_size, checksum, classification,
+                                  department, status, uploaded_by, created_at, updated_at)
+           values (?,?,?,?,?,?,?,?,?,'processing',?,?,?)""",
+        doc_id, user.tenant_id, Path(name).stem.replace("_", " ").replace("-", " ").strip() or name, name,
+        Path(name).suffix.lstrip(".").lower(), len(data), checksum, classification, department, user.id, ts, ts,
     )
     return str(doc_id), False
 
@@ -56,10 +60,10 @@ async def process_document(doc_id: str, data: bytes, user: Identity) -> None:
     """Background job. Never raises: failures are recorded on the document."""
     p = await pool()
     try:
-        row = await p.fetchrow("select filename, classification, tenant_id from public.documents where id=$1::uuid", doc_id)
+        row = await p.fetchrow("select filename, classification, tenant_id from documents where id=?", doc_id)
         tenant, name, classification = str(row["tenant_id"]), row["filename"], row["classification"]
         storage_path = f"{tenant}/{doc_id}/{name}"
-        await supabase_admin.storage_put(storage_path, data, "application/octet-stream")
+        await run_in_threadpool(storage.put, storage_path, data)
 
         parsed = await run_in_threadpool(parse_document, name, data)
         chunks = chunk_blocks(parsed.title, parsed.blocks)
@@ -71,18 +75,18 @@ async def process_document(doc_id: str, data: bytes, user: Identity) -> None:
 
         async with p.acquire() as conn:
             async with conn.transaction():
-                await conn.execute("delete from public.chunks where document_id=$1::uuid", doc_id)
+                await conn.execute("delete from chunks where document_id=?", doc_id)
                 await conn.executemany(
-                    """insert into public.chunks (document_id, tenant_id, chunk_index, page, section, kind, content,
-                                                  token_count, classification, allowed_roles, embedding)
-                       values ($1::uuid,$2::uuid,$3,$4,$5,$6,$7,$8,$9,$10::text[],$11::extensions.vector)""",
-                    [(doc_id, tenant, c.index, c.page, c.section, c.kind, c.content, c.tokens, classification, roles,
-                      vec(v)) for c, v in zip(chunks, vectors)],
+                    """insert into chunks (id, document_id, tenant_id, chunk_index, page, section, kind, content,
+                                           token_count, classification, allowed_roles, embedding)
+                       values (?,?,?,?,?,?,?,?,?,?,?,?)""",
+                    [(new_id(), doc_id, tenant, c.index, c.page, c.section, c.kind, c.content, c.tokens, classification,
+                      json.dumps(roles), vec(v)) for c, v in zip(chunks, vectors)],
                 )
                 await conn.execute(
-                    """update public.documents set status='ready', error=null, title=$2, total_pages=$3,
-                              total_chunks=$4, storage_path=$5, updated_at=now() where id=$1::uuid""",
-                    doc_id, parsed.title, parsed.pages, len(chunks), storage_path,
+                    """update documents set status='ready', error=null, title=?, total_pages=?,
+                              total_chunks=?, storage_path=?, updated_at=? where id=?""",
+                    parsed.title, parsed.pages, len(chunks), storage_path, now(), doc_id,
                 )
         await audit.log_event(user, "document.upload", detail=dict(
             document_id=doc_id, filename=name, classification=classification, chunks=len(chunks), pages=parsed.pages,
@@ -96,8 +100,8 @@ async def process_document(doc_id: str, data: bytes, user: Identity) -> None:
 
 async def _fail(doc_id: str, message: str, user: Identity) -> None:
     p = await pool()
-    await p.execute("update public.documents set status='failed', error=$2, updated_at=now() where id=$1::uuid",
-                    doc_id, message[:400])
+    await p.execute("update documents set status='failed', error=?, updated_at=? where id=?",
+                    message[:400], now(), doc_id)
     try:
         await audit.log_event(user, "document.failed", detail=dict(document_id=doc_id, error=message[:200]))
     except Exception:  # noqa: BLE001
@@ -107,8 +111,7 @@ async def _fail(doc_id: str, message: str, user: Identity) -> None:
 async def recover_stuck_documents() -> int:
     """On startup: documents left in 'processing' by a crashed worker are marked failed (and stay unsearchable)."""
     p = await pool()
-    r = await p.execute(
-        "update public.documents set status='failed', error='Processing was interrupted. Upload the file again.' "
-        "where status='processing' and updated_at < now() - interval '10 minutes'"
-    )
-    return int(r.split()[-1])
+    cutoff = (datetime.now(timezone.utc) - timedelta(minutes=10)).isoformat(timespec="microseconds")
+    return await p.execute(
+        "update documents set status='failed', error='Processing was interrupted. Upload the file again.' "
+        "where status='processing' and updated_at < ?", cutoff)

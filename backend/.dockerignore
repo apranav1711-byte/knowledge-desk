@@ -1,9 +1,0 @@
-.env
-.venv
-__pycache__
-*.pyc
-data
-tests
-demo
-sample_uploads
-.pytest_cache

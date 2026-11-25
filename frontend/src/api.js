@@ -1,17 +1,27 @@
-import { supabase } from './supabase';
+// The API runs on the user's own PC (http://localhost:8000 by default).
+export const API = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/$/, '');
+const TOKEN_KEY = 'kd_session';
 
-const API = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/$/, '');
+export const session = {
+  get: () => localStorage.getItem(TOKEN_KEY),
+  set: (t) => { localStorage.setItem(TOKEN_KEY, t); window.dispatchEvent(new Event('kd-session')); },
+  clear: () => { localStorage.removeItem(TOKEN_KEY); window.dispatchEvent(new Event('kd-session')); },
+};
 
-export async function api(path, { method = 'GET', body, form } = {}) {
-  const { data } = await supabase.auth.getSession();
+export async function api(path, { method = 'GET', body, form, auth = true } = {}) {
   const headers = {};
-  if (data.session?.access_token) headers.Authorization = `Bearer ${data.session.access_token}`;
+  const token = session.get();
+  if (auth && token) headers.Authorization = `Bearer ${token}`;
   let payload;
   if (form) payload = form;
   else if (body !== undefined) { headers['Content-Type'] = 'application/json'; payload = JSON.stringify(body); }
   let res;
   try { res = await fetch(`${API}/api/v1${path}`, { method, headers, body: payload }); }
-  catch { const e = new Error('Cannot reach the Knowledge Desk API. Is the backend running?'); e.status = 0; throw e; }
+  catch {
+    const e = new Error('Cannot reach Knowledge Desk on this computer. Start it with start-knowledge-desk, then try again.');
+    e.status = 0; throw e;
+  }
+  if (res.status === 401 && auth && token) session.clear(); // expired session: back to sign-in
   if (res.status === 204) return null;
   const json = await res.json().catch(() => null);
   if (!res.ok) {
