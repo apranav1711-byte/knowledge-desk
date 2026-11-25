@@ -1,7 +1,7 @@
 {
   "video": "../less.mp4",
   "output": "../less-voiceover.mp4",
-  "voice": "en-US-AvaNeural",
+  "voice": "en-US-AndrewNeural",
   "rate": "+0%",
   "segments": [
     {
