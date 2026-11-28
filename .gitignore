@@ -115,3 +115,4 @@ paper/*.bbl
 paper/*.blg
 paper/experiments/*.log
 paper/experiments/__pycache__/
+paper/slides/render/
