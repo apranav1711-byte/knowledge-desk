@@ -196,8 +196,8 @@ class _Conn:
         await self._run(lambda: self._c.execute("commit"))
 
     # ---------------------------------------------------------------- retrieval
-    async def match_chunks(self, qvec, query: str, tenant: str, roles: list[str], k: int = 8) -> list[dict]:
-        return await self._run(lambda: _match_chunks(self._c, qvec, query, tenant, roles, k))
+    async def match_chunks(self, qvec, query: str, tenant: str, roles: list[str], k: int = 8, mode: str = "hybrid") -> list[dict]:
+        return await self._run(lambda: _match_chunks(self._c, qvec, query, tenant, roles, k, mode))
 
     # ---------------------------------------------------------------- audit chain
     async def append_audit(self, tenant: str, user_id: str | None, email: str, role: str, event: str, query: str,
@@ -247,7 +247,7 @@ def _fts_query(text: str) -> str | None:
     return " OR ".join(f'"{w}"' for w in words) or None
 
 
-def _match_chunks(c: sqlite3.Connection, qvec, query: str, tenant: str, roles: list[str], k: int) -> list[dict]:
+def _match_chunks(c: sqlite3.Connection, qvec, query: str, tenant: str, roles: list[str], k: int, mode: str = "hybrid") -> list[dict]:
     """Hybrid retrieval: dense cosine + BM25 full-text, fused with reciprocal rank fusion (k=60).
     PRE-filtering: only chunks of ready documents in this tenant whose allowed_roles include the caller's role
     are selected from the database at all."""
@@ -277,6 +277,10 @@ def _match_chunks(c: sqlite3.Connection, qvec, query: str, tenant: str, roles: l
             if cid in allowed and len(lex_rank) < 24:
                 lex_rank[cid], lex_score[cid] = len(lex_rank) + 1, -float(s)
 
+    if mode == "dense":  # ablations used in the evaluation; production always uses "hybrid"
+        lex_rank = {}
+    elif mode == "lexical":
+        dense_rank = {}
     fused = {i: (1 / (60 + dense_rank[i]) if i in dense_rank else 0) + (1 / (60 + lex_rank[i]) if i in lex_rank else 0)
              for i in set(dense_rank) | set(lex_rank)}
     pos = {cid: n for n, cid in enumerate(ids)}

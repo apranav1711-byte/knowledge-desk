@@ -1,0 +1,35 @@
+{
+ "seeds": 5,
+ "docs": 158,
+ "chunks_mean": 474,
+ "facts": 619,
+ "answerable": 1857,
+ "unanswerable": 418,
+ "faithfulness": [
+  {
+   "answer_lines": 1723,
+   "verbatim_lines": 1723,
+   "rate": 1.0
+  },
+  {
+   "answer_lines": 1632,
+   "verbatim_lines": 1632,
+   "rate": 1.0
+  },
+  {
+   "answer_lines": 1641,
+   "verbatim_lines": 1641,
+   "rate": 1.0
+  },
+  {
+   "answer_lines": 1738,
+   "verbatim_lines": 1738,
+   "rate": 1.0
+  },
+  {
+   "answer_lines": 1701,
+   "verbatim_lines": 1701,
+   "rate": 1.0
+  }
+ ]
+}

@@ -1,0 +1,14 @@
+\begin{tabular}{lrrrr}
+\toprule
+Retriever & R@1 (\%) & R@3 (\%) & R@5 (\%) & MRR\\
+\midrule
+\multicolumn{5}{l}{\emph{Keyword-aligned queries}}\\
+BM25 only & 63.4\,$\pm$\,1.9 & 96.7\,$\pm$\,0.5 & 99.9\,$\pm$\,0.1 & 0.791\,$\pm$\,0.012\\
+Dense only & 53.1\,$\pm$\,1.8 & 78.2\,$\pm$\,1.3 & 87.5\,$\pm$\,1.4 & 0.675\,$\pm$\,0.013\\
+Hybrid (RRF) & 60.0\,$\pm$\,0.9 & 89.2\,$\pm$\,1.3 & 96.2\,$\pm$\,0.6 & 0.752\,$\pm$\,0.009\\
+\multicolumn{5}{l}{\emph{Synonym queries}}\\
+BM25 only & 46.2\,$\pm$\,1.4 & 73.0\,$\pm$\,0.6 & 81.3\,$\pm$\,0.7 & 0.605\,$\pm$\,0.009\\
+Dense only & 48.6\,$\pm$\,0.9 & 72.6\,$\pm$\,2.1 & 81.6\,$\pm$\,0.8 & 0.628\,$\pm$\,0.009\\
+Hybrid (RRF) & 52.7\,$\pm$\,0.7 & 79.8\,$\pm$\,1.6 & 89.6\,$\pm$\,0.7 & 0.680\,$\pm$\,0.004\\
+\bottomrule
+\end{tabular}

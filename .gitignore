@@ -107,3 +107,11 @@ voiceover/sheet_*.jpg
 *.mp3
 .claude/
 backend/bundled_model/
+
+# paper build files
+paper/*.aux
+paper/*.log
+paper/*.bbl
+paper/*.blg
+paper/experiments/*.log
+paper/experiments/__pycache__/

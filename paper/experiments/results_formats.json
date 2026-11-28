@@ -1,0 +1,74 @@
+{
+ "md": {
+  "facts": 80,
+  "extracted": 80,
+  "extraction_rate": 1.0,
+  "queries": 80,
+  "recall_at_1": 0.5375,
+  "recall_at_3": 0.825,
+  "chunks": 60
+ },
+ "txt": {
+  "facts": 80,
+  "extracted": 80,
+  "extraction_rate": 1.0,
+  "queries": 80,
+  "recall_at_1": 0.5,
+  "recall_at_3": 0.9125,
+  "chunks": 20
+ },
+ "html": {
+  "facts": 80,
+  "extracted": 80,
+  "extraction_rate": 1.0,
+  "queries": 80,
+  "recall_at_1": 0.4875,
+  "recall_at_3": 0.9125,
+  "chunks": 20
+ },
+ "docx": {
+  "facts": 80,
+  "extracted": 80,
+  "extraction_rate": 1.0,
+  "queries": 80,
+  "recall_at_1": 0.475,
+  "recall_at_3": 0.9125,
+  "chunks": 20
+ },
+ "xlsx": {
+  "facts": 80,
+  "extracted": 80,
+  "extraction_rate": 1.0,
+  "queries": 80,
+  "recall_at_1": 0.5,
+  "recall_at_3": 0.8875,
+  "chunks": 20
+ },
+ "csv": {
+  "facts": 80,
+  "extracted": 80,
+  "extraction_rate": 1.0,
+  "queries": 80,
+  "recall_at_1": 0.5125,
+  "recall_at_3": 0.925,
+  "chunks": 20
+ },
+ "pptx": {
+  "facts": 80,
+  "extracted": 80,
+  "extraction_rate": 1.0,
+  "queries": 80,
+  "recall_at_1": 0.5625,
+  "recall_at_3": 0.8875,
+  "chunks": 20
+ },
+ "pdf": {
+  "facts": 80,
+  "extracted": 80,
+  "extraction_rate": 1.0,
+  "queries": 80,
+  "recall_at_1": 0.5,
+  "recall_at_3": 0.9125,
+  "chunks": 20
+ }
+}
